@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "esperanza-ops": {
+      "type": "http",
+      "url": "https://esperanza-ops.round-base-ed8c.workers.dev/mcp",
+      "headers": { "Authorization": "Bearer ${ESPERANZA_OPS_TOKEN}" }
+    }
+  }
+}

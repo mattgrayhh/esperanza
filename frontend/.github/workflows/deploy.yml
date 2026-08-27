@@ -1,0 +1,234 @@
+name: Deploy (Cloudflare)
+
+# Push to `staging`  -> deploys the staging Worker (esperanzahomes-staging.workers.dev)
+# Push/merge to `main` -> deploys production (esperanzahomes.hazardhouse.ai)
+#
+# public/ is committed to the repo. CI does NOT run the full `node build.mjs` (that
+# needs the source O'Neill scrape). It DOES run the scrape-free refresh
+# (`node generate-details.mjs`), which re-renders from the live public API using committed
+# templates + harvested assets — no scrape, no local machine:
+#   * detail pages    community / floor-plan / QMI
+#   * LIST pages      /new-homes/available/, /new-homes/<city>/available-homes/,
+#                     /new-homes/available/filter/<hash>/ (render-lists.mjs)
+#   * promo copy      public/live-facts.json badges + a site-wide sweep of promo ribbons
+#                     for incentives that no longer exist in D1
+# So every deploy ships fresh inventory AND fresh incentive copy with zero local
+# dependency; flagship/theme pages ship as committed.
+# Before render-lists.mjs landed the list pages were frozen June-8 scrape output that only
+# a human running `node build.mjs` locally ever refreshed — they advertised unpublished
+# homes, hid published ones, and kept a deleted 4.99% promotion on ~30 committed files.
+#
+# Requires two repo secrets:
+#   CLOUDFLARE_API_TOKEN   - token with "Edit Cloudflare Workers" scope
+#                            (Account: Workers Scripts:Edit + Account Settings:Read,
+#                             Zone: Workers Routes:Edit for the custom domain)
+#   CLOUDFLARE_ACCOUNT_ID  - the hello@hazard.house account id
+
+on:
+  push:
+    branches: [main, staging]
+  workflow_dispatch:
+  # Nightly rebuild: re-run the scrape-free detail refresh from live D1 and redeploy, so
+  # corrected data / ingest updates reach prod within 24h with nobody remembering to
+  # re-bake. Without this, the static bake goes stale and every "we fixed it" stays
+  # invisible on the site — the core reason O'Neill parity kept regressing (audit 2026-07-21).
+  schedule:
+    - cron: "0 9 * * *"  # 09:00 UTC ≈ 3–4am Central (off-peak)
+
+# NO workflow-level concurrency. It used to be `deploy-${{ github.ref }}` with
+# cancel-in-progress: true, which placed no bound on WHERE a cancellation landed — it
+# could arrive while the run was fetching the API or uploading to Cloudflare. Concurrency
+# is now declared per job so a burst is cancelled in the cheap waiting room while the bake
+# itself is never interrupted — see the two jobs below.
+
+# Only what this workflow needs: checkout reads the repo, the failure alert opens/updates a
+# tracking issue. Declaring these explicitly drops every other scope to none. Cloudflare
+# auth is the CLOUDFLARE_API_TOKEN secret, not GITHUB_TOKEN, so the deploy is unaffected.
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  # ===========================================================================
+  # Trailing-edge coalescer. The admin (packages/admin postWrite -> site-rebuild.ts)
+  # dispatches this workflow on EVERY public-facing write, so normal marketing work —
+  # editing five fields on one home, saving each — fires five dispatches in a couple of
+  # minutes. A production bake takes ~80s, so under the old workflow-level
+  # cancel-in-progress each new save cancelled the run before it.
+  #
+  # WHAT THAT DID AND DID NOT COST. It did NOT leave the site stale for the editing
+  # session: the bake reads the live API at bake time (data.mjs), not a snapshot pinned
+  # at dispatch, so whichever run survives renders current D1 and the last dispatch
+  # wins. An earlier account in this lane claimed a burst "starved" the rebuild and the
+  # site stayed stale until editing stopped; that was WRONG and is retracted — the
+  # 16:59:00Z cancellation was replaced by the 16:59:02Z run 2s later, which succeeded.
+  #
+  # So this split is bought for two reasons, and it is worth being exact about which is
+  # measured and which is insurance:
+  #
+  #   MEASURED — every superseded dispatch still starts a runner and is killed partway
+  #   through it. A five-save burst is five runners; any that reach step 5 have already
+  #   pulled the entire live API. The waiting room collapses the burst before a runner
+  #   has fetched anything or touched Cloudflare.
+  #
+  #   INSURANCE, NOT AN OBSERVED BREAK — cancel-in-progress on a workflow whose last step
+  #   is a production deploy puts no bound on where the kill lands. This has never been
+  #   seen here: both cancellations in this workflow's history (runs 30473236136 and
+  #   30473236139, 16:59:00Z) died at `checkout` within 9s, with the deploy step SKIPPED.
+  #   Nor is a partial deploy demonstrated — a Workers deployment activates atomically, so
+  #   an interrupted `wrangler deploy` most likely just does nothing. The point of
+  #   cancel-in-progress: false on the bake is that it makes that a GUARANTEE rather than
+  #   a timing accident, on the one step that touches production.
+  #
+  # Cancellation is also invisible to alerting — `if: failure()` does NOT fire on a
+  # cancelled run — so the cheapest place to put cancellations is a job that does nothing
+  # but sleep, where having no alert on them costs nothing.
+  #
+  # This job is a cancellable waiting room. Its group DOES cancel in progress, so a burst
+  # collapses here — during a sleep, before any runner has fetched the API or touched
+  # Cloudflare. The last dispatch in the burst is the one that survives to bake, and it
+  # bakes the state left by every earlier save in the burst (content comes from the live
+  # API at bake time, not from the dispatch).
+  #
+  # Only workflow_dispatch waits: that is the admin/bursty path (and rebuild-details.yml's
+  # post-commit dispatch). push and schedule are discrete one-off events with a human or a
+  # cron behind them, so they go straight to the bake and keep today's latency. They still
+  # get the job, so push-supersedes-push keeps working exactly as before.
+  #
+  # Cost: a save reaches the site in roughly QUIET_SECONDS + runner start + ~80s bake,
+  # about two minutes, and no bake is ever interrupted once started. Raise QUIET_SECONDS
+  # to coalesce more aggressively at the cost of latency.
+  # ===========================================================================
+  coalesce:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-coalesce-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Quiet period (collapse a burst of admin saves into one bake)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          QUIET_SECONDS: "20"
+        run: |
+          echo "Waiting ${QUIET_SECONDS}s. A newer dispatch on this ref cancels this run here,"
+          echo "before the bake starts, and bakes the same content itself."
+          sleep "$QUIET_SECONDS"
+
+  deploy:
+    needs: coalesce
+    # Skip ONLY when the quiet period was cancelled — that is the coalescing signal (a
+    # newer dispatch, or a human cancelling the run, both surface as 'cancelled'). A
+    # coalesce job that genuinely FAILED must not silently swallow the deploy: it does
+    # nothing but sleep, so a failure there is infrastructure, and the default
+    # skip-on-failed-dependency would drop a production bake with nothing to alert on.
+    if: ${{ !cancelled() && needs.coalesce.result != 'cancelled' }}
+    runs-on: ubuntu-latest
+    # cancel-in-progress: false is the other half of the fix. Once a bake is running it
+    # runs to completion — a later save can no longer abort a deploy that is already
+    # fetching the API or uploading to Cloudflare. GitHub keeps at most one in-progress
+    # plus one pending run per group and cancels any EARLIER pending run, so a save during
+    # a bake queues rather than interrupting, and only the newest queued bake survives to
+    # run. Both properties are measured, not assumed — see the probe in the PR description.
+    concurrency:
+      group: deploy-bake-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Renderer regression self-tests (scrape-free). Gates the deploy so a render-source
+      # regression (e.g. plan cards reverting to dev-min price, gallery cap, blog parity)
+      # fails CI instead of shipping. --if-present so this no-ops until the check:render
+      # script lands (frontend render PR), then activates automatically.
+      - name: Regression self-tests (scrape-free)
+        run: npm run --if-present check:render
+
+      # Refresh the API-driven pages from the live public API into public/ before shipping:
+      # detail pages (community / floor-plan / QMI), the QMI list/index pages, and the
+      # promo copy. Scrape-free + no npm deps (bare node), so CI needs no local scrape —
+      # the whole point of removing the local dependency.
+      - name: Refresh detail + list pages from the live API (scrape-free)
+        run: node generate-details.mjs
+
+      # blog-index.json feeds the client-side blog search island (blog-search.js fetches
+      # it; live's server-side /blog/?search= has no static equivalent). generate-details
+      # bakes blog PAGES but does not touch the index, and the generator is only invoked
+      # from build.mjs (build.mjs:191,308) — which CI never runs. So a post published via
+      # admin got a page but stayed missing from search until someone ran a full local
+      # build. Measured 2026-07-29 at ac9923ed: live index 125 entries, regenerating from
+      # the same committed tree gave 127, and one of the two extras
+      # ("Vista Verde is Off to a Strong Start", HTTP 200) matched no search query at all.
+      # Cheap (a directory scan of already-baked HTML, no network, no deps), so run it on
+      # every bake rather than trying to detect when the post set changed.
+      - name: Regenerate the blog search index from the baked posts
+        run: node scripts/gen-blog-index.mjs
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4"
+          command: deploy
+        env:
+          # main/workflow_dispatch on main -> top-level config; staging branch -> staging env
+          CLOUDFLARE_ENV: ${{ github.ref == 'refs/heads/staging' && 'staging' || '' }}
+
+      # See rebuild-details.yml for the reasoning. This leg matters just as much: the same
+      # generate-details.mjs runs here, so a prune-backstop trip blocks the 09:00 deploy
+      # too — the repo mirror and the deploy both stall on one root cause.
+      #
+      # Gated to main because this workflow also deploys `staging` on push, and the incident
+      # this issue describes ("production is frozen", prune-backstop runbook) is only true of
+      # the production leg. A failed staging deploy freezes nothing buyer-facing, so alerting
+      # on it would put a false production incident in front of responders — and, because the
+      # issue is keyed on a single title, would comment on and reopen the *production* thread.
+      # The nightly cron and workflow_dispatch on main both run as refs/heads/main, so the
+      # unattended path this PR exists to cover is fully covered. Staging failures stay
+      # visible the normal way: a red check on the push that caused them, with a human already
+      # watching. If staging ever needs its own alert it wants its own title/body, not this one.
+      #
+      # This covers FAILURE only, and deliberately so. A cancelled run is now a NORMAL,
+      # expected outcome — it means a newer save superseded this one — so cancellation can
+      # never be the alert signal. That leaves one uncovered hole: the admin's dispatch
+      # itself is best-effort (triggerFrontendRebuild swallows a failed POST), so if no run
+      # is ever created the site stays stale with nothing to fail. Closing that needs a
+      # watchdog on "content changed with no successful production bake since", which is a
+      # separate change and NOT in this PR.
+      - name: Alert on failure
+        if: failure() && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: "CI failure: nightly rebuild/deploy is not reaching production"
+          WORKFLOW: ${{ github.workflow }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          BODY="$RUNNER_TEMP/ci-failure-body.md"
+          {
+            echo "\`$WORKFLOW\` failed on \`$REF\`: $RUN_URL"
+            echo
+            echo "**The site is not down — it is frozen.** Cloudflare keeps serving the last"
+            echo "successful deploy, so nothing looks broken, but no data or content fix"
+            echo "reaches production until this workflow is green again."
+            echo
+            echo "The most common cause is the stale-QMI prune backstop in"
+            echo "\`generate-details.mjs\` after a bulk unpublish: it refuses more than 50"
+            echo "newly-stale detail pages in one run, or a jump past 3x the prior run's"
+            echo "count. Search the run log for \`stale QMI prune:\`."
+            echo
+            echo "- Deletions intended and reviewed -> re-run with \`ESP_ALLOW_BULK_PRUNE=1\`."
+            echo "- Otherwise -> unpublish in smaller batches; do not raise the backstop."
+          } > "$BODY"
+          NUM="$(gh issue list --state open --limit 100 --json number,title \
+                   --jq 'map(select(.title == env.TITLE)) | .[0].number // empty')"
+          if [ -n "$NUM" ]; then
+            gh issue comment "$NUM" --body-file "$BODY"
+            echo "Appended to existing tracking issue #$NUM"
+          else
+            gh issue create --title "$TITLE" --body-file "$BODY"
+          fi

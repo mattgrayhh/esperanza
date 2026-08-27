@@ -1,0 +1,86 @@
+# packages/api — public read API Worker (edge-served).
+# Reads v_public_* views from D1 (read replicas + Cache API) and resolves effective
+# promo targeting at read time. All served image URLs are stable R2 / media.esperanzahomes.com.
+#
+# Routes: GET /api/public/<entity> for entity in
+#   qmi | communities | promotions | floorplans | cities | collections | images | blogs | testimonials
+# Else -> 404 "Not found". OPTIONS -> 204 (CORS). Upstream failure -> 502 { error, detail }.
+#
+# === D1 read replication (Sessions API) ===
+# The public read path opens a session with `first-unconstrained` (any replica;
+# eventually consistent) — correct for a CDN-cached public read. Read replication
+# must be ENABLED on the D1 database (one-time):
+#   wrangler d1 read-replication enable esperanza
+# The ADMIN Worker MUST instead use `withSession("first-primary")` (or replay a stored
+# x-d1-bookmark) so editors get read-your-writes immediately after a commit.
+#
+# === Cache purge hook (AUTHENTICATED) ===
+# Each entity body is stored in caches.default keyed by its URL with an edge
+# Cache-Control (qmi 60s, others 300s) that is NOT emitted to clients. The admin
+# and ingest Workers bust an entity after a write by issuing
+# GET /api/public/<entity>?purge=1 with header `X-Purge-Key: <PURGE_KEY secret>`;
+# an unauthenticated ?purge=1 is IGNORED (served as a normal cached GET) so public
+# callers can't cache-bust every request into a D1 rebuild. cache.delete() is
+# per-colo; the TTL is the global staleness bound.
+# A 24h "last-good" backup copy is also kept per entity and served (X-Cache: STALE)
+# if a rebuild throws, instead of a 502.
+name = "esperanza-api"
+main = "src/index.ts"
+compatibility_date = "2025-05-20"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# CSV CORS allowlist. Reflected back when the request Origin matches (exact, "*",
+# or "https://*.host" subdomain wildcard); else falls back to the first entry.
+ALLOWED_ORIGINS = "https://www.esperanzahomes.com,https://esperanzahomes.com,https://*.hazardhouse.ai"
+
+# Shared D1 binding. database_id placeholder — fill after `wrangler d1 create esperanza`.
+# Read path uses read replicas (first-unconstrained); admin read-your-writes uses
+# primary/bookmark (set in the admin Worker's code).
+[[d1_databases]]
+binding = "DB"
+database_name = "esperanza"
+database_id = "<D1_DATABASE_ID>"
+
+# Shared R2 bucket — only needed if the API ever streams/derives image URLs directly.
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "esperanza-cms"
+
+# No secrets required for the read path.
+#
+# === PURGE_KEY (authenticated cache purge) ===
+# Shared secret for the ?purge=1 hook (see header comment). ALREADY SET on the deployed
+# esperanza-api, esperanza-admin, and esperanza-ingest Workers (2026-07-19):
+#   wrangler secret put PURGE_KEY --name esperanza-api
+# Unset -> every purge request is ignored (fail-safe: cache still expires via TTL).
+#
+# === Sentry (backend error monitoring) ===
+# Optional. Set once against the deployed Worker to enable Sentry:
+#   wrangler secret put SENTRY_DSN --name esperanza-api   # paste the esperanza-backend DSN
+# Unset -> Sentry is a no-op (see withSentry `enabled` in src/index.ts). The DSN belongs
+# to the `esperanza-backend` project in the hazard-house Sentry org.
+
+# Workers Logs + Traces — full observability, source of truth for deploys.
+# Mirrors the dashboard's granular schema (logs{} + traces{}) so a `wrangler deploy`
+# reproduces the live state instead of resetting it. head_sampling_rate=1 => keep
+# 100%; persist => queryable in the dashboard; invocation_logs => per-request lines.
+# NOTE: top-level `enabled=true` (dashboard leaves it false + relies on the sub-flags).
+# We force it true belt-and-suspenders so logging can never be silently disabled on
+# deploy — this is the "always know what happened" guarantee.
+# ponytail: 100% sampling everywhere. If a hot worker's log volume/cost ever bites,
+# lower head_sampling_rate on THAT worker; admin/internal workers are low-traffic.
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true

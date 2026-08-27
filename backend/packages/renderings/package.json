@@ -1,0 +1,12 @@
+{
+  "name": "@esperanza/renderings",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OneDrive (MS Graph) -> R2 floor-plan renderings. Writes floor_plans.synced_image_url with sp_ no-clobber semantics.",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "test": "vitest run"
+  }
+}

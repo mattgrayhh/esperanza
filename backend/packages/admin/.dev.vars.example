@@ -1,0 +1,32 @@
+# packages/admin/.dev.vars.example — copy to .dev.vars for local `next dev`.
+# .dev.vars is git-ignored (root .gitignore). NEVER commit real values.
+#
+# The admin authenticates its users via Auth.js v5 (Credentials + JWT). In production
+# AUTH_SECRET is set as a wrangler SECRET (not here). Locally you can either log in via
+# /login against a seeded admin_users row, OR set ADMIN_DEV_EMAIL to skip login entirely.
+
+# --- Auth.js JWT signing secret (REQUIRED to actually log in locally) ---
+# Generate one with: openssl rand -base64 32
+AUTH_SECRET=replace-with-openssl-rand-base64-32
+
+# --- Local login bypass (LOCAL ONLY) ---
+# When set under `next dev`, the whole auth gate is skipped and writes are attributed
+# to this email (audit_log.actor). This must NOT be set in wrangler.toml [vars], and it
+# is additionally inert when NODE_ENV === 'production', so it can never bypass a deploy.
+ADMIN_DEV_EMAIL=you@esperanzahomes.com
+
+# --- Public image base (also in wrangler.toml [vars]; .dev.vars overrides locally) ---
+# uploadImage() builds the stable url as `${IMAGES_PUBLIC_BASE_URL}/<entity>/<id>/<file>`.
+IMAGES_PUBLIC_BASE_URL=https://img.hazardhouse.ai
+
+# --- D1 during `next dev` ---
+# Localhost uses the EMULATED local D1 (apply migrations --local + seed-admin; sync
+# data via `wrangler d1 export` → `wrangler d1 execute --local` if you need parity).
+# To deliberately work against PRODUCTION data, temporarily set `remote = true` on
+# the DB binding in wrangler.toml AND `remoteBindings: true` in next.config.ts —
+# and revert both before committing (local writes would hit prod).
+
+# --- Public API cache purge (optional locally) ---
+# Admin writes purge the esperanza-api edge cache with an X-Purge-Key header.
+# Set it to the api worker's PURGE_KEY secret if you need purges to work locally.
+# PURGE_KEY=<matches the esperanza-api worker's PURGE_KEY secret>

@@ -1,0 +1,29 @@
+{
+  "name": "@esperanza/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "D1 schema (Drizzle), migrations, and v_public_* views. Source of truth for the data model.",
+  "main": "schema.ts",
+  "types": "schema.ts",
+  "exports": {
+    ".": "./schema.ts",
+    "./promo": "./lib/promo.ts",
+    "./promo-banner-style": "./lib/promo-banner-style.ts",
+    "./elevation-price": "./lib/elevation-price.ts",
+    "./slug": "./lib/slug.ts",
+    "./override": "./lib/override.ts",
+    "./pdf-invalidate": "./lib/pdf-invalidate.ts",
+    "./pdf-ensure": "./lib/pdf-ensure.ts",
+    "./public-cache-purge": "./lib/public-cache-purge.ts",
+    "./site-rebuild": "./lib/site-rebuild.ts",
+    "./listing-hero": "./lib/listing-hero.ts"
+  },
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "scripts:typecheck": "tsc --noEmit -p scripts/tsconfig.json"
+  }
+}

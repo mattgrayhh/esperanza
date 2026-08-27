@@ -1,0 +1,17 @@
+{
+  "name": "@esperanza/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Public read API (edge). Serves /qmi, /communities, /promotions etc. from v_public_* views with read replicas + Cache API; resolves effective promo targeting at read time.",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@esperanza/db": "*",
+    "@sentry/cloudflare": "^10.63.0"
+  }
+}

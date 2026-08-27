@@ -1,0 +1,36 @@
+{
+  "name": "@esperanza/pdf",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./token": "./src/token.ts",
+    "./theme": "./src/theme.ts"
+  },
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "dev:remote": "wrangler dev --remote",
+    "test": "vitest run",
+    "test:remote": "vitest run -c vitest.remote.config.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "scripts:typecheck": "tsc --noEmit -p scripts/tsconfig.json",
+    "derive-renditions": "tsx scripts/derive-renditions.ts",
+    "seed-renders": "tsx scripts/seed-renders.ts"
+  },
+  "dependencies": {
+    "@cloudflare/puppeteer": "^0.0.14",
+    "@esperanza/db": "*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250520.0",
+    "@types/react": "^18.3.0",
+    "sharp": "^0.33.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^3.1.4",
+    "wrangler": "latest"
+  }
+}

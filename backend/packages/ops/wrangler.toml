@@ -1,0 +1,57 @@
+name = "esperanza-ops"
+main = "src/index.ts"
+compatibility_date = "2025-05-20"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "esperanza"
+database_id = "<D1_DATABASE_ID>"
+
+[[services]]
+binding = "INGEST"
+service = "esperanza-ingest"
+
+[[services]]
+binding = "PDF"
+service = "esperanza-pdf"
+
+[[queues.producers]]
+binding = "RENDER_Q"
+queue = "esperanza-pdf-render"
+
+# Durable Object for the MCP agent (class added in Task B7)
+[[durable_objects.bindings]]
+name = "MCP_AGENT"
+class_name = "OpsMcpAgent"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["OpsMcpAgent"]
+
+# Secrets (set via `wrangler secret put`, never inline):
+#   INGEST_TRIGGER_TOKEN — bearer for ingest trigger
+
+# Workers Logs + Traces — full observability, source of truth for deploys.
+# Mirrors the dashboard's granular schema (logs{} + traces{}) so a `wrangler deploy`
+# reproduces the live state instead of resetting it. head_sampling_rate=1 => keep
+# 100%; persist => queryable in the dashboard; invocation_logs => per-request lines.
+# NOTE: top-level `enabled=true` (dashboard leaves it false + relies on the sub-flags).
+# We force it true belt-and-suspenders so logging can never be silently disabled on
+# deploy — this is the "always know what happened" guarantee.
+# ponytail: 100% sampling everywhere. If a hot worker's log volume/cost ever bites,
+# lower head_sampling_rate on THAT worker; admin/internal workers are low-traffic.
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true

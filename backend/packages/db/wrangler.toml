@@ -1,0 +1,12 @@
+# packages/db — schema/migrations package.
+# Not a deployed Worker; this wrangler.toml exists so `wrangler d1 migrations apply esperanza`
+# and local D1 tooling resolve the shared DB binding from this directory.
+name = "esperanza-db"
+compatibility_date = "2025-05-20"
+
+# Shared D1 binding. database_id is a placeholder — fill after `wrangler d1 create esperanza`.
+[[d1_databases]]
+binding = "DB"
+database_name = "esperanza"
+database_id = "<D1_DATABASE_ID>"
+migrations_dir = "migrations"

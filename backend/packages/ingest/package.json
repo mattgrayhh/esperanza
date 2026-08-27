@@ -1,0 +1,16 @@
+{
+  "name": "@esperanza/ingest",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Snowflake->D1 ingest. Cron diffs Snowflake vs D1 and enqueues per-record; queue consumer writes only allow-listed synced columns.",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@esperanza/db": "*"
+  }
+}

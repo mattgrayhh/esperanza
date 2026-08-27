@@ -1,0 +1,82 @@
+name = "esperanza-pdf"
+main = "src/index.ts"
+compatibility_date = "2025-05-20"
+compatibility_flags = ["nodejs_compat"]
+
+browser = { binding = "BROWSER" }
+
+[[durable_objects.bindings]]
+name = "RENDERER"
+class_name = "BrowserRenderer"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["BrowserRenderer"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "esperanza"
+database_id = "<D1_DATABASE_ID>"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "esperanza-cms"
+
+[vars]
+IMAGES_PUBLIC_BASE_URL = "https://img.hazardhouse.ai"
+# PDF links resolve through the WORKER route (/pdf/<type>/<slug>), not the raw R2 bucket
+# (R2 objects live at pdf/<type>/<id>.pdf). At cutover, repoint to media./pdf.esperanzahomes.com.
+PDF_PUBLIC_BASE_URL = "https://esperanza-pdf.round-base-ed8c.workers.dev"
+ADMIN_ORIGIN = "https://esperanza-admin.round-base-ed8c.workers.dev"
+
+[[queues.producers]]
+binding = "RENDER_Q"
+queue = "esperanza-pdf-render"
+
+[[queues.consumers]]
+queue = "esperanza-pdf-render"
+max_batch_size = 3
+max_retries = 3
+dead_letter_queue = "esperanza-pdf-render-dlq"
+# Cap simultaneous render invocations to 1. Renders go through the reused keep-alive
+# browser in the BrowserRenderer Durable Object (~18-26/min), so one consumer drains the
+# full fleet (~249 docs) in ~10-15 min; retries + DLQ catch stragglers. See DEPLOY.md.
+max_concurrency = 1
+
+# DLQ consumer: thrice-failed jobs are marked status='error' (DLQ note in last_error) and
+# logged, so the serve path falls back to the last-good R2 object instead of an infinite
+# "Building…" poll page. No dead_letter_queue here — a failed mark just redelivers.
+[[queues.consumers]]
+queue = "esperanza-pdf-render-dlq"
+max_batch_size = 10
+
+# Nightly list warm/rebuild. GATED: the account is at its 5-cron-trigger cap until the
+# legacy crons are disabled at cutover. Uncomment + deploy ONLY after a slot is freed.
+# Until then, POST /warm (Authorization: Bearer <PDF_PREVIEW_SECRET>) is the manual
+# warm path — same enqueueAllStale logic, run by hand pre-launch / post-deploy.
+# [triggers]
+# crons = ["0 7 * * *"]
+
+# Workers Logs + Traces — full observability, source of truth for deploys.
+# Mirrors the dashboard's granular schema (logs{} + traces{}) so a `wrangler deploy`
+# reproduces the live state instead of resetting it. head_sampling_rate=1 => keep
+# 100%; persist => queryable in the dashboard; invocation_logs => per-request lines.
+# NOTE: top-level `enabled=true` (dashboard leaves it false + relies on the sub-flags).
+# We force it true belt-and-suspenders so logging can never be silently disabled on
+# deploy — this is the "always know what happened" guarantee.
+# ponytail: 100% sampling everywhere. If a hot worker's log volume/cost ever bites,
+# lower head_sampling_rate on THAT worker; admin/internal workers are low-traffic.
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true

@@ -1,0 +1,26 @@
+-- =============================================================================
+-- esperanza-cf — D1 (SQLite) migration 0010: qmi.photo_gallery_json.
+--
+-- Per-home QMI photo gallery, mirroring the communities pattern from 0008
+-- (communities.photo_gallery_json). Holds a JSON array of {url, alt} objects —
+-- ordered gallery of R2-hosted photos scraped from the legacy Homefiniti QMI
+-- pages and mirrored into the esperanza-cms bucket under qmi/<id>/photo_<n>.jpg.
+-- (framer-push's galleryUrls() already accepts both bare-string and {url,...}
+-- array shapes, so the object form is safe for the push path too.)
+--
+-- COLUMN BUDGET: qmi was at 96 columns (the fp_* lookups were removed for the
+-- D1 100-column limit — see views.sql); this takes it to 97. Headroom: 3.
+--
+-- Pure ADD COLUMN — no view drop needed for the ALTER, but views.sql MUST be
+-- re-applied afterwards to expose the new column through v_public_qmi:
+--   wrangler d1 execute esperanza --file=packages/db/views.sql [--local|--remote]
+--
+-- Apply with:
+--   wrangler d1 migrations apply esperanza --local      (dev)
+--   wrangler d1 migrations apply esperanza --remote     (prod)
+--
+-- Populated by scripts/load-qmi-homefiniti.ts (one-time Homefiniti scrape load)
+-- and thereafter admin-owned. Purely additive, nullable → existing rows, reads,
+-- writes, and tests untouched.
+-- =============================================================================
+ALTER TABLE qmi ADD COLUMN photo_gallery_json TEXT; -- JSON array of {url, alt}

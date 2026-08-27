@@ -1,0 +1,18 @@
+node_modules/
+.DS_Store
+*.log
+.wrangler/
+.bin/
+assets/locales/.es-build-progress.json
+
+# GENERATED, never committed. public/live-facts.json is assets/live-facts.json with every
+# per-home promo badge whose promotion left D1 pruned out (render-lists.writeLiveFacts,
+# called from generate-details.mjs — so both CI workflows regenerate it before deploy).
+# It used to be a committed copy, which is how a DELETED "4.99% 30 YEAR FIXED RATE*"
+# incentive kept rendering in browsers for weeks: the islands fetch this file at runtime.
+# Committing it makes stale promo copy possible again; if it is ever missing the islands
+# fall back to a neutral empty state ({}), which is the correct failure mode.
+public/live-facts.json
+
+# Build output — assembled by build.mjs from a local scrape; not committed here.
+public/

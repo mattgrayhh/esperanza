@@ -1,0 +1,102 @@
+# packages/ingest — Snowflake -> Queue -> D1 ingest Worker.
+# Cron diffs Snowflake vs D1 and PRODUCES per-record messages onto
+# esperanza-sync-queue; the same Worker CONSUMES that queue and writes ONLY the
+# allow-listed synced_* columns (applySynced) — never admin-owned / override_*.
+name = "esperanza-ingest"
+main = "src/index.ts"
+compatibility_date = "2025-05-20"
+compatibility_flags = ["nodejs_compat"]
+
+# Snowflake diff cron — every 4 hours (Migration Plan v2, Phase 3).
+[triggers]
+crons = ["0 */4 * * *"]
+
+# Shared D1 binding. database_id placeholder — fill after `wrangler d1 create esperanza`.
+[[d1_databases]]
+binding = "DB"
+database_name = "esperanza"
+database_id = "<D1_DATABASE_ID>"
+
+# Shared R2 bucket (image storage; consumer rehosts synced attachment images to R2).
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "esperanza-cms"
+
+# Producer: the cron enqueues per-record sync messages here.
+[[queues.producers]]
+binding = "SYNC_QUEUE"
+queue = "esperanza-sync-queue"
+
+# Consumer: this same Worker also drains esperanza-sync-queue and applies the
+# synced columns. Per-message ack/retry; a message that still fails after
+# max_retries is delivered to the dead-letter queue for inspection.
+[[queues.consumers]]
+queue = "esperanza-sync-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "esperanza-sync-queue-dlq"
+
+# DEAD-LETTER QUEUE NOTE
+# ----------------------
+# `esperanza-sync-queue-dlq` must be created before deploy:
+#     wrangler queues create esperanza-sync-queue
+#     wrangler queues create esperanza-sync-queue-dlq
+# Messages land in the DLQ only after 3 failed delivery attempts (a poison
+# message — e.g. an unresolved community/city link, or a write-set violation
+# thrown by assertQmiPatchAllowed). The DLQ consumer below records each dead
+# message as a sync_log row (status 'dlq', body in error_message) and acks —
+# visibility only, NO re-enqueue. Triage the underlying data, then re-run the
+# ingest (POST /run) to regenerate the message.
+[[queues.consumers]]
+queue = "esperanza-sync-queue-dlq"
+max_batch_size = 10
+
+# Snowflake config (non-secret) — ported from esperanza-data-sync wrangler.toml.
+[vars]
+SNOWFLAKE_ACCOUNT = "<SNOWFLAKE_ACCOUNT>"
+SNOWFLAKE_USER = "<SNOWFLAKE_USER>"
+SNOWFLAKE_DATABASE = "<SNOWFLAKE_DATABASE>"
+SNOWFLAKE_WAREHOUSE = "<SNOWFLAKE_WAREHOUSE>"
+SNOWFLAKE_SCHEMA = "ANALYTICS_ZONE"
+# Public base of the esperanza-pdf worker. A synced QMI create self-registers a
+# pdf_renders row + backfills qmi.dynamic_pdf against this base (consumer.ts).
+PDF_PUBLIC_BASE_URL = "https://esperanza-pdf.round-base-ed8c.workers.dev"
+# Public base of the esperanza-api worker. After each consumer batch the ingest
+# purges the api's /api/public/<entity> edge cache for the entity types the
+# batch touched, so synced changes show before the TTL (consumer.ts).
+API_PUBLIC_URL = "https://esperanza-api.round-base-ed8c.workers.dev"
+
+# Service binding to the public read API (post-batch cache purge).
+[[services]]
+binding = "API"
+service = "esperanza-api"
+
+# Secrets (set via `wrangler secret put`):
+#   SNOWFLAKE_PASSWORD   — Snowflake REST login password
+#   PURGE_KEY            — X-Purge-Key the api requires on authenticated cache
+#                          purges (already set on the deployed worker)
+
+# Workers Logs + Traces — full observability, source of truth for deploys.
+# Mirrors the dashboard's granular schema (logs{} + traces{}) so a `wrangler deploy`
+# reproduces the live state instead of resetting it. head_sampling_rate=1 => keep
+# 100%; persist => queryable in the dashboard; invocation_logs => per-request lines.
+# NOTE: top-level `enabled=true` (dashboard leaves it false + relies on the sub-flags).
+# We force it true belt-and-suspenders so logging can never be silently disabled on
+# deploy — this is the "always know what happened" guarantee.
+# ponytail: 100% sampling everywhere. If a hot worker's log volume/cost ever bites,
+# lower head_sampling_rate on THAT worker; admin/internal workers are low-traffic.
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true

@@ -1,0 +1,26 @@
+-- =============================================================================
+-- esperanza-cf — D1 (SQLite) migration 0006: field_definitions.custom flag.
+--
+-- Field Types tab + Field-Builder Phase C. Adds a single additive boolean column
+-- to field_definitions so a user-added (custom) field is distinguishable from a
+-- system/synced or static-config field WITHOUT introspecting table columns at
+-- runtime.
+--
+--   custom — 0 = the field maps a real entity-table column / bespoke widget
+--                (every field the seed-field-definitions seed emits today);
+--            1 = a user-added field whose VALUE lives in the entity table's
+--                custom_fields JSON column (key == the JSON key == the Framer
+--                field id created by framer-push POST /schema).
+--
+-- framer-push reads custom=1 defs to emit custom_fields[key] as the configured
+-- framer_type (Phase C custom-field push). The admin "Add field" affordance writes
+-- custom=1, visible_in_form=1 rows (admin side, separate task).
+--
+-- Purely additive, DEFAULT 0 → existing rows, reads, writes, and tests untouched.
+-- Apply with:
+--   wrangler d1 migrations apply esperanza --local     (dev)
+--   wrangler d1 migrations apply esperanza --remote     (prod)
+-- After the remote apply, RE-SEED field_definitions (scripts/seed-field-definitions.ts
+-- --remote) so every static field carries custom=0 explicitly.
+-- =============================================================================
+ALTER TABLE field_definitions ADD COLUMN custom INTEGER NOT NULL DEFAULT 0;

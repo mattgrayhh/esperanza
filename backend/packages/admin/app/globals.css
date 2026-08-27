@@ -1,0 +1,269 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Scan shared db helpers so promo preview utility classes are emitted at build time. */
+@source "../../../packages/db/lib/**/*.ts";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Tailwind v4: theme tokens live here via @theme. Minimal admin palette. */
+@theme {
+  --color-brand: #2f5d4a;
+  --color-brand-foreground: #ffffff;
+  --color-promo-gold: #c4b59a;
+  --color-surface: #f3f1ed;
+  --color-mint: #dfefe4;
+  /* Warning/override state — warm amber, distinct from brand green and destructive terracotta.
+     Used for override badges, unsaved-changes borders, and any caution signal.
+     Darkened to oklch(0.52 0.18 52) ≈ amber-800 for AA contrast on both white and mint surfaces. */
+  --color-warning: oklch(0.52 0.18 52);
+  /* Geist is the dashboard typeface everywhere (body + headings).
+     --font-geist is injected by next/font (Geist) via the <html> className. */
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html,
+body {
+  background: #fff; /* pure white app background (feedback [12]) */
+  /* warm near-black ink to match --foreground (oklch 0.25 0.012 70 ≈ #2a2723) */
+  color: #2a2723;
+  font-family: var(--font-sans);
+}
+
+/* Layered so Tailwind utilities (e.g. text-primary-foreground on anchor-styled
+   buttons like "New") win over this reset. Unlayered, this `a` rule beat the
+   utilities layer and forced dark link text on primary buttons (feedback [1][19][26]). */
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+@theme inline {
+  /* Font tokens (--font-sans, --font-heading -> --font-geist) are defined in the
+     @theme block above and emitted as real :root vars so `font-family:
+     var(--font-sans)` resolves to Geist. Do NOT redeclare them in @theme inline:
+     `--font-sans: var(--font-sans)` is circular, resolves to empty, and the body
+     falls back to the browser default (Times). */
+  --color-status-published: var(--status-published);
+  --color-status-published-foreground: var(--status-published-foreground);
+  --color-status-draft: var(--status-draft);
+  --color-status-draft-foreground: var(--status-draft-foreground);
+  --color-status-sold: var(--status-sold);
+  --color-status-sold-foreground: var(--status-sold-foreground);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Esperanza light theme — warm off-white surface, brand green, pale mint.
+     Neutrals are tinted warm (hue ~85, very low chroma); no pure #000/#fff. */
+
+  /* App background = pure white #fff (operator request, feedback [12]).
+     (app-sidebar forces sidebar inner to bg-background, so --background also
+     themes the sidebar shell; --sidebar below is set to match.) */
+  --background: oklch(1 0 0); /* pure white #fff */
+  --foreground: oklch(0.25 0.012 70); /* warm near-black ink, ~#2a2723 */
+
+  /* Content cards = pure white #fff to match the white app background. */
+  --card: oklch(1 0 0); /* pure white #fff */
+  --card-foreground: oklch(0.25 0.012 70);
+  --popover: oklch(1 0 0); /* pure white #fff to match the white app surface */
+  --popover-foreground: oklch(0.25 0.012 70);
+
+  /* Primary actions + active nav = brand green #2f5d4a. */
+  --primary: oklch(0.4395 0.0603 164.98);
+  --primary-foreground: oklch(1 0 0); /* crisp pure-white text on green (feedback [2][10]) */
+
+  /* Secondary = pale mint surface, brand-green text. */
+  --secondary: oklch(0.9372 0.0224 155.91); /* #dfefe4 */
+  --secondary-foreground: oklch(0.4395 0.0603 164.98);
+
+  /* Muted = a touch deeper than surface; muted text = warm gray. */
+  --muted: oklch(0.93 0.005 84.5);
+  --muted-foreground: oklch(0.52 0.012 70); /* warm gray, ~#6f685f */
+
+  /* Accent = pale mint (active/synced surfaces), brand-green text. */
+  --accent: oklch(0.9372 0.0224 155.91); /* #dfefe4 */
+  --accent-foreground: oklch(0.4395 0.0603 164.98);
+
+  /* Sold / destructive = desaturated terracotta. */
+  --destructive: oklch(0.5923 0.1107 39.3);
+
+  --border: oklch(0.89 0.006 84.5); /* warm hairline */
+  --input: oklch(0.89 0.006 84.5);
+  --ring: oklch(0.4395 0.0603 164.98); /* brand-green focus ring */
+
+  /* Charts: brand-green family stepping toward warm neutral. */
+  --chart-1: oklch(0.4395 0.0603 164.98);
+  --chart-2: oklch(0.5523 0.0507 163);
+  --chart-3: oklch(0.6612 0.0419 161);
+  --chart-4: oklch(0.7642 0.033 160);
+  --chart-5: oklch(0.6085 0.0173 67.49);
+
+  --radius: 0.625rem;
+
+  /* Sidebar shell — pure white to match the white app background (feedback [12]).
+     Brand stays on-brand via the mint active/hover state + brand-green active text:
+     active nav: data-active:bg-sidebar-accent (mint) + text sidebar-accent-foreground (green). */
+  --sidebar: oklch(1 0 0); /* pure white #fff */
+  --sidebar-foreground: oklch(0.25 0.012 70);
+  --sidebar-primary: oklch(0.4395 0.0603 164.98); /* brand green */
+  --sidebar-primary-foreground: oklch(0.9875 0.0026 106.45);
+  --sidebar-accent: oklch(0.9372 0.0224 155.91); /* pale mint active/hover surface */
+  --sidebar-accent-foreground: oklch(0.4395 0.0603 164.98); /* brand green active text */
+  --sidebar-border: oklch(0.89 0.006 84.5);
+  --sidebar-ring: oklch(0.4395 0.0603 164.98);
+
+  /* List status badges. */
+  --status-published: oklch(0.4395 0.0603 164.98); /* brand green */
+  --status-published-foreground: oklch(0.9875 0.0026 106.45);
+  --status-draft: oklch(0.6085 0.0173 67.49); /* warm gray */
+  --status-draft-foreground: oklch(0.9875 0.0026 106.45);
+  --status-sold: oklch(0.5923 0.1107 39.3); /* desaturated terracotta */
+  --status-sold-foreground: oklch(0.9875 0.0026 106.45);
+}
+
+.dark {
+  /* Esperanza is a daytime office tool — light is the canonical theme.
+     This dark block is kept coherent (warm-tinted neutrals, brand-green
+     accents) so any .dark toggle stays on-brand, but it is not the default. */
+  --background: oklch(0.2 0.008 160); /* deep warm-green-tinted charcoal */
+  --foreground: oklch(0.955 0.004 100);
+  --card: oklch(0.245 0.009 162);
+  --card-foreground: oklch(0.955 0.004 100);
+  --popover: oklch(0.245 0.009 162);
+  --popover-foreground: oklch(0.955 0.004 100);
+
+  /* In dark, lift brand green for legibility on dark surfaces. */
+  --primary: oklch(0.72 0.07 162);
+  --primary-foreground: oklch(0.2 0.02 165);
+  --secondary: oklch(0.3 0.018 162);
+  --secondary-foreground: oklch(0.955 0.004 100);
+  --muted: oklch(0.3 0.012 162);
+  --muted-foreground: oklch(0.72 0.012 100);
+  --accent: oklch(0.34 0.03 162); /* muted mint-green active surface */
+  --accent-foreground: oklch(0.9 0.03 160);
+  --destructive: oklch(0.62 0.12 39);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.72 0.07 162);
+  --chart-1: oklch(0.72 0.07 162);
+  --chart-2: oklch(0.64 0.06 161);
+  --chart-3: oklch(0.56 0.05 161);
+  --chart-4: oklch(0.48 0.045 162);
+  --chart-5: oklch(0.6 0.015 80);
+  --sidebar: oklch(0.2 0.008 160);
+  --sidebar-foreground: oklch(0.955 0.004 100);
+  --sidebar-primary: oklch(0.72 0.07 162); /* brand green (was purple) */
+  --sidebar-primary-foreground: oklch(0.2 0.02 165);
+  --sidebar-accent: oklch(0.34 0.03 162);
+  --sidebar-accent-foreground: oklch(0.9 0.03 160);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.72 0.07 162);
+
+  --status-published: oklch(0.72 0.07 162);
+  --status-published-foreground: oklch(0.2 0.02 165);
+  --status-draft: oklch(0.6 0.015 80);
+  --status-draft-foreground: oklch(0.2 0.012 80);
+  --status-sold: oklch(0.62 0.12 39);
+  --status-sold-foreground: oklch(0.98 0.01 40);
+  /* Warning lifts in dark mode for legibility on dark surfaces. */
+  --color-warning: oklch(0.76 0.14 55);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  /* Headings inherit Geist via --font-sans — no separate display face. */
+}
+
+/* Dashboard entrance — one staggered reveal per page load; honor reduced motion. */
+@keyframes dash-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dash-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dash-enter > * {
+    animation: dash-fade-up 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .dash-enter > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .dash-enter > *:nth-child(2) {
+    animation-delay: 40ms;
+  }
+  .dash-enter > *:nth-child(3) {
+    animation-delay: 80ms;
+  }
+  .dash-enter > *:nth-child(4) {
+    animation-delay: 120ms;
+  }
+  .dash-bar-seg {
+    transform-origin: left center;
+    animation: dash-bar-grow 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: 160ms;
+  }
+}

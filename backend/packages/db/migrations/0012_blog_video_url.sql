@@ -1,0 +1,17 @@
+-- =============================================================================
+-- esperanza-cf — D1 (SQLite) migration 0012: blogs.video_url.
+--
+-- Video embed URL for blog posts (client feedback 2026-06-10: "confirm how
+-- videos on blogs will be managed in the new backend"). Mirrors the
+-- communities.featured_video pattern: a plain Vimeo URL string, admin-owned,
+-- emitted to Framer as a string field the blog template binds to an embed.
+--
+-- COLUMN BUDGET: blogs is at 14 columns; this takes it to 15.
+--
+-- Apply with:
+--   wrangler d1 migrations apply esperanza --local      (dev)
+--   wrangler d1 migrations apply esperanza --remote     (prod)
+--
+-- Purely additive, nullable → existing rows, reads, writes, and tests untouched.
+-- =============================================================================
+ALTER TABLE blogs ADD COLUMN video_url TEXT; -- Vimeo URL (same convention as communities.featured_video)

@@ -1,0 +1,307 @@
+{
+ "san-saba": {
+  "newCost": 202.75,
+  "oldCost": 395,
+  "hers": 47
+ },
+ "san-luis": {
+  "newCost": 115.33,
+  "oldCost": 198,
+  "hers": 44
+ },
+ "san-lorenzo-ii": {
+  "newCost": 164.75,
+  "oldCost": 301.75,
+  "hers": 45
+ },
+ "san-lorenzo": {
+  "newCost": 147.5,
+  "oldCost": 258.42,
+  "hers": 44
+ },
+ "sage": {
+  "newCost": 211.92,
+  "oldCost": 407.42,
+  "hers": 44
+ },
+ "rv-deluxe-coach-house": {
+  "newCost": 92.08,
+  "oldCost": 140,
+  "hers": 48
+ },
+ "rv-casita": {
+  "newCost": 87,
+  "oldCost": 132.67,
+  "hers": 49
+ },
+ "presidio": {
+  "newCost": 110.33,
+  "oldCost": 186.33,
+  "hers": 45
+ },
+ "pecan": {
+  "newCost": 130.33,
+  "oldCost": 217,
+  "hers": 44
+ },
+ "paloma": {
+  "newCost": 118.17,
+  "oldCost": 202.92,
+  "hers": 44
+ },
+ "palmetto": {
+  "newCost": 89.08,
+  "oldCost": 146.75,
+  "hers": 49
+ },
+ "palm": {
+  "newCost": 121.42,
+  "oldCost": 200.58,
+  "hers": 45
+ },
+ "osprey": {
+  "newCost": 116.67,
+  "oldCost": 199.17,
+  "hers": 44
+ },
+ "oak": {
+  "newCost": 146.25,
+  "oldCost": 254.25,
+  "hers": 49
+ },
+ "nueces": {
+  "newCost": 145.33,
+  "oldCost": 253.17,
+  "hers": 44
+ },
+ "nikola": {
+  "newCost": 136.58,
+  "oldCost": 252.5,
+  "hers": 46
+ },
+ "mulberry": {
+  "newCost": 136.25,
+  "oldCost": 239.67,
+  "hers": 47
+ },
+ "monte": {
+  "newCost": 160.08,
+  "oldCost": 305.33,
+  "hers": 44
+ },
+ "marzano": {
+  "newCost": 126.58,
+  "oldCost": 201.33,
+  "hers": 49
+ },
+ "marigold": {
+  "newCost": 116.67,
+  "oldCost": 207.17,
+  "hers": 44
+ },
+ "manzanita": {
+  "newCost": 114.67,
+  "oldCost": 196.83,
+  "hers": 47
+ },
+ "magnolia": {
+  "newCost": 173.67,
+  "oldCost": 347.17,
+  "hers": 43
+ },
+ "lunelli": {
+  "newCost": 100.25,
+  "oldCost": 158.08,
+  "hers": 47
+ },
+ "luna": {
+  "newCost": 140.17,
+  "oldCost": 237.58,
+  "hers": 44
+ },
+ "laurel": {
+  "newCost": 125.58,
+  "oldCost": 213.5,
+  "hers": 45
+ },
+ "kestrel": {
+  "newCost": 107.42,
+  "oldCost": 182.25,
+  "hers": 43
+ },
+ "juniper": {
+  "newCost": 142.33,
+  "oldCost": 246.42,
+  "hers": 47
+ },
+ "jasmine": {
+  "newCost": 126.67,
+  "oldCost": 225.5,
+  "hers": 44
+ },
+ "iris": {
+  "newCost": 131.75,
+  "oldCost": 234.42,
+  "hers": 45
+ },
+ "indigo": {
+  "newCost": 112.08,
+  "oldCost": 192.58,
+  "hers": 45
+ },
+ "hickory": {
+  "newCost": 125.42,
+  "oldCost": 197.83,
+  "hers": 48
+ },
+ "hackberry": {
+  "newCost": 143.42,
+  "oldCost": 281.25,
+  "hers": 50
+ },
+ "grapa": {
+  "newCost": 144.17,
+  "oldCost": 261.92,
+  "hers": 46
+ },
+ "fresno": {
+  "newCost": 177.25,
+  "oldCost": 335.25,
+  "hers": 44
+ },
+ "francisco-ii": {
+  "newCost": 166.33,
+  "oldCost": 304.5,
+  "hers": 45
+ },
+ "francisco-i": {
+  "newCost": 144.58,
+  "oldCost": 254.17,
+  "hers": 44
+ },
+ "encino": {
+  "newCost": 129.75,
+  "oldCost": 226.5,
+  "hers": 43
+ },
+ "elm": {
+  "newCost": 158.83,
+  "oldCost": 293.33,
+  "hers": 45
+ },
+ "ebony": {
+  "newCost": 105.83,
+  "oldCost": 179.75,
+  "hers": 46
+ },
+ "cypress": {
+  "newCost": 119.17,
+  "oldCost": 206.42,
+  "hers": 48
+ },
+ "cuervo": {
+  "newCost": 121.33,
+  "oldCost": 216.67,
+  "hers": 42
+ },
+ "cottage": {
+  "newCost": 105.17,
+  "oldCost": 169.58,
+  "hers": 46
+ },
+ "cimarron": {
+  "newCost": 168.75,
+  "oldCost": 322.17,
+  "hers": 45
+ },
+ "chacon": {
+  "newCost": 124.67,
+  "oldCost": 215.83,
+  "hers": 43
+ },
+ "cedar": {
+  "newCost": 168.75,
+  "oldCost": 307.17,
+  "hers": 45
+ },
+ "capistrano": {
+  "newCost": 167.92,
+  "oldCost": 316.92,
+  "hers": 46
+ },
+ "brunello": {
+  "newCost": 117.67,
+  "oldCost": 183.5,
+  "hers": 51
+ },
+ "brazos": {
+  "newCost": 173.25,
+  "oldCost": 332.42,
+  "hers": 46
+ },
+ "bluebonnet": {
+  "newCost": 122.25,
+  "oldCost": 208.25,
+  "hers": 45
+ },
+ "blanco": {
+  "newCost": 170.92,
+  "oldCost": 317.17,
+  "hers": 45
+ },
+ "birch": {
+  "newCost": 188.42,
+  "oldCost": 319.67,
+  "hers": 50
+ },
+ "benanti": {
+  "newCost": 143.25,
+  "oldCost": 256.5,
+  "hers": 45
+ },
+ "bear": {
+  "newCost": 113.08,
+  "oldCost": 199.08,
+  "hers": 44
+ },
+ "barbados": {
+  "newCost": 150.08,
+  "oldCost": 279.58,
+  "hers": 46
+ },
+ "bahia": {
+  "newCost": 115.92,
+  "oldCost": 201.92,
+  "hers": 44
+ },
+ "antinori": {
+  "newCost": 129.08,
+  "oldCost": 230.17,
+  "hers": 46
+ },
+ "allegrini": {
+  "newCost": 125.17,
+  "oldCost": 219,
+  "hers": 46
+ },
+ "agave": {
+  "newCost": 158.33,
+  "oldCost": 298.25,
+  "hers": 43
+ },
+ "acuna-ii": {
+  "newCost": 132.75,
+  "oldCost": 252.83,
+  "hers": 45
+ },
+ "peppoli": {
+  "newCost": 106.67,
+  "oldCost": 176,
+  "hers": 46
+ },
+ "cortono": {
+  "newCost": 120.67,
+  "oldCost": 208.5,
+  "hers": 45
+ }
+}

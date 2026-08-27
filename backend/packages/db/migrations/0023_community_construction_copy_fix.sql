@@ -1,0 +1,176 @@
+-- 0023_community_construction_copy_fix.sql
+-- Two fixes to community construction-feature copy, reconciled against the active
+-- site (www.esperanzahomes.com) AND current D1 (no blanket overwrite — several
+-- communities have MORE in D1 than the 2026-06-08 scrape and are left untouched).
+--
+-- (1) FORMAT: vista-verde & aqualina stored raw HTML (<ul><li>) in these markdown
+--     columns; framer-push ftIf()/markdownToHtml() then escapes it and the list
+--     renders broken. Converted to markdown bullets (content preserved verbatim).
+-- (2) TRUNCATION: 10 communities' Exterior list was missing the active-site tail
+--     ("2 Car Garage" / "6' Rear Yard Sealed Wood Fence"). Restored to the full
+--     active-site list. NOTE: this also corrects "1 Car Garage"->"2 Car Garage"
+--     on several, matching the active site.
+--
+-- *_rich columns are MARKDOWN (RichTextField). After --remote: backfill communities.
+
+-- (1) FORMAT FIX — HTML -> markdown, content unchanged
+UPDATE communities SET exterior_construction_copy_rich = '- Engineered Foundation and Windstorm Plans
+- 100% Stucco Exterior
+- Screens on all Operable Windows
+- Underground Utilities
+- Exterior Paint—Sherwin Williams
+- Bora-Care with Mold-Care pest treatment
+- James Hardie Fiber Cement Soffits and Fascia (50 yr warranty)
+- 2-Car Garage' WHERE slug = 'vista-verde';
+UPDATE communities SET interior_construction_copy_rich = '- Smoke Detectors w/ Battery Backup
+- 9 ft ceilings—First Floor per plan
+- Ceramic Tile in all Standard Areas -
+- (1st Floor Common/Living, Bathrooms, Utility, Casita)
+- Carpet in all Non-Standard Areas -
+- (Bedrooms, Study, Loft, Gameroom, Media, 2nd Floor Common/Living)
+- Stained Oak Staircase with Painted Risers
+- Stained Oak Handrail with Painted Balusters
+- Interior Paint—Sherwin Williams
+- Liftmaster Garage Door Opener
+- Upgraded Lighting Package by Illuminations
+- Molded Panel Interior Doors
+- CAT6 in Master and Living Room
+- RG6 in all rooms
+- Rounded Corners Throughout Home
+- Ceiling Fans in Master Bedroom and Family Room
+- All other Bedrooms Blocked and Wired for Fans
+- Custom Built Staircase with Pine Spindles
+- Textured Walls
+- Handcrafted Wood Cabinets
+- Shoe mold included with baseboard in all non-carpeted areas (excluding concrete areas)' WHERE slug = 'vista-verde';
+UPDATE communities SET exterior_construction_copy_rich = '- Engineered Foundation and Windstorm Plans
+- 100% Masonry Exterior (Stucco & Stone)
+- Screens on all Operable Windows
+- Underground Utilities
+- Exterior Paint—Sherwin Williams
+- Bora-Care with Mold-Care pest treatment
+- James Hardie Fiber Cement Soffits and Fascia (50 yr warranty)
+- 2-Car Garage' WHERE slug = 'aqualina-at-tres-lagos';
+UPDATE communities SET interior_construction_copy_rich = '- Smoke Detectors w/ Battery Backup
+- 1- Story Plans: 10'' Ceilings
+- 2 - Story Plans: First Floor - 9'' Ceilings, Second Floor - 9'' Ceilings
+- Ceramic Tile in all Standard Areas -
+- (1st Floor Common/Living, Bathrooms, Utility, Casita)
+- Carpet in all Non-Standard Areas -
+- (Bedrooms, Study, Loft, Gameroom, Media, 2nd Floor Common/Living)
+- Stained Oak Staircase with Painted Risers
+- Stained Oak Handrail with Painted Balusters
+- Interior Paint—Sherwin Williams
+- Liftmaster Garage Door Opener
+- Upgraded Lighting Package by Illuminations
+- Molded Panel Interior Doors
+- CAT6 in Master and Living Room
+- RG6 in All Rooms
+- Rounded Corners/ Throughout Home
+- Ceiling Fans in Master Bedroom and Family Room
+- All other Bedrooms Blocked and Wired for Fans
+- Custom Built Staircase with Pine Spindles
+- Textured Walls
+- Shoe mold included with baseboard in all non-carpeted areas (excluding concrete areas)
+- Handcrafted Wood Cabinets' WHERE slug = 'aqualina-at-tres-lagos';
+
+-- (2) TRUNCATION FIX — Exterior restored to full active-site list
+UPDATE communities SET exterior_construction_copy_rich = '- Engineered Foundation and Windstorm Plans
+- Brick Exterior or Stucco Upgrade
+- Screens on all Operable Windows
+- Underground Utilities
+- Exterior Paint—Sherwin Williams
+- Bora-Care with Mold-Care pest treatment
+- Windstorm Designed Plans
+- James Hardie Cement Soffits and Fascia- 50 yr warranty
+- 2 Car Garage
+- 6’ Rear Yard Sealed Wood Fence all around' WHERE slug = 'antlers-crossing';
+UPDATE communities SET exterior_construction_copy_rich = '- Engineered Foundation and Windstorm Plans
+- Brick Exterior or Stucco Upgrade
+- Screens on all Operable Windows
+- Underground Utilities
+- Exterior Paint—Sherwin Williams
+- Bora-Care with Mold-Care pest treatment
+- Windstorm Designed Plans
+- James Hardie Cement Soffits and Fascia- 50 yr warranty
+- 2 Car Garage
+- 6’ Rear Yard Sealed Wood Fence all around' WHERE slug = 'el-eden';
+UPDATE communities SET exterior_construction_copy_rich = '- Engineered Foundation and Windstorm Plans
+- Brick Exterior or Stucco Upgrade
+- Screens on all Operable Windows
+- Underground Utilities
+- Exterior Paint—Sherwin Williams
+- Bora-Care with Mold-Care pest treatment
+- Windstorm Designed Plans
+- James Hardie Cement Soffits and Fascia- 50 yr warranty
+- 6’ Rear Yard Sealed Wood Fence all around' WHERE slug = 'harvest-coves';
+UPDATE communities SET exterior_construction_copy_rich = '- Engineered Foundation and Windstorm Plans
+- Brick Exterior or Stucco Upgrade
+- Screens on all Operable Windows
+- Underground Utilities
+- Exterior Paint—Sherwin Williams
+- Bora-Care with Mold-Care pest treatment
+- Windstorm Designed Plans
+- James Hardie Cement Soffits and Fascia- 50 yr warranty
+- 6’ Rear Yard Sealed Wood Fence all around' WHERE slug = 'las-brisas-at-tres-lagos';
+UPDATE communities SET exterior_construction_copy_rich = '- Engineered Foundation and Windstorm Plans
+- Brick Exterior or Stucco Upgrade
+- Screens on all Operable Windows
+- Underground Utilities
+- Exterior Paint—Sherwin Williams
+- Bora-Care with Mold-Care pest treatment
+- Windstorm Designed Plans
+- James Hardie Cement Soffits and Fascia- 50 yr warranty
+- 2-Car Garage
+- 6’ Rear Yard Sealed Wood Fence all around' WHERE slug = 'palo-alto-groves';
+UPDATE communities SET exterior_construction_copy_rich = '- Engineered Foundation and Windstorm Plans
+- 100% Masonry Exterior (Stucco, Rock or Brick per Plan)
+- Screens on all Operable Windows
+- Underground Utilities
+- Exterior Paint—Sherwin Williams
+- Bora-Care with Mold-Care pest treatment
+- Windstorm Engineered Plans
+- James Hardie Fiber Cement Soffits and Fascia (50 yr warranty)
+- 2-Car Garage
+- Haven - 6’ Rear Yard Sealed Wood Fence all around' WHERE slug = 'paso-real';
+UPDATE communities SET exterior_construction_copy_rich = '- Engineered Foundation and Windstorm Plans
+- Brick Exterior or Stucco Upgrade
+- Screens on all Operable Windows
+- Underground Utilities
+- Exterior Paint—Sherwin Williams
+- Bora-Care with Mold-Care pest treatment
+- Windstorm Designed Plans
+- James Hardie Cement Soffits and Fascia- 50 yr warranty
+- 2-Car Garage
+- 6’ Rear Yard Sealed Wood Fence all around' WHERE slug = 'rogers-coves';
+UPDATE communities SET exterior_construction_copy_rich = '- Engineered Foundation and Windstorm Plans
+- Brick Exterior or Stucco Upgrade
+- Screens on all Operable Windows
+- Underground Utilities
+- Exterior Paint—Sherwin Williams
+- Bora-Care with Mold-Care pest treatment
+- Windstorm Designed Plans
+- James Hardie Cement Soffits and Fascia- 50 yr warranty
+- 2 Car Garage
+- 6’ Rear Yard Sealed Wood Fence all around' WHERE slug = 'sendero-at-bentsen-palm';
+UPDATE communities SET exterior_construction_copy_rich = '- Engineered Foundation and Windstorm Plans
+- Brick Exterior or Stucco Upgrade
+- Screens on all Operable Windows
+- Underground Utilities
+- Exterior Paint—Sherwin Williams
+- Bora-Care with Mold-Care pest treatment
+- Windstorm Designed Plans
+- James Hardie Cement Soffits and Fascia- 50 yr warranty
+- 2-Car Garage
+- 6’ Rear Yard Sealed Wood Fence all around' WHERE slug = 'texas-heights';
+UPDATE communities SET exterior_construction_copy_rich = '- Engineered Foundation and Windstorm Plans
+- Brick Exterior or Stucco Upgrade
+- Screens on all Operable Windows
+- Underground Utilities
+- Exterior Paint—Sherwin Williams
+- Bora-Care with Mold-Care pest treatment
+- Windstorm Designed Plans
+- James Hardie Cement Soffits and Fascia- 50 yr warranty
+- 2 Car Garage
+- 6’ Rear Yard Sealed Wood Fence all around' WHERE slug = 'wright-ranch';
+

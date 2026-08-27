@@ -1,0 +1,114 @@
+# Floor Plan Image — load report
+
+- Mode: LIVE
+- Folders scanned: 76
+- Matched & uploaded: 53
+- Folders with no DB record: 23
+- Matched folder but no main-floor-plan SVG: 0
+- Records with no folder: 12
+- Records WITH linked QMIs but NO image: 8
+- Hard failures: 0
+
+## Matched & uploaded (53)
+- acuna_ii → Acuna II (recZxX5SeCh9ZlHUX)
+- agave → Agave (rec0OuuwCl7s7CeGo)
+- allegrini → Allegrini (rec2C7Gf5NWk1cSC9)
+- antinori → Antinori (recjR3jhSLdFjx31o)
+- bahia → Bahia (recHyvHhXIcMJWbvO)
+- barbados → Barbados (recsmoEtIeqCSOdJp)
+- bear → Bear (recrH7Mooev4s21M5)
+- benanti → Benanti (recKcHie19yhYFhb3)
+- brazos → Brazos (reckWj5LYSfc5U3kO)
+- capistrano → Capistrano (recnlVjhw9HO2JO59)
+- casita → RV Casita (recTl5CqugvCT4epL)
+- cenizo → Cenizo (reckEzq1WYl7pQAfb)
+- chacon → Chacon (recUDjjZN4VU6dh4H)
+- cortono → Cortono (rec11kp4mcO8ln4Gl)
+- cottage → Cottage (rec43G5cKclq0e8FN)
+- cuervo → Cuervo (recPwB6Y1nzy334EK)
+- cypress → Cypress (rec7yjONol1GXg4fm)
+- deluxe_coach → RV Deluxe Coach House (recC3DvquoRQXcf6o)
+- ebony → Ebony (recbi0ZIJPSLvjtz4)
+- elm → Elm (recXleTIsns9ijCux)
+- encino → Encino (recn6ABWw1HDP7KSB)
+- espada → Espada (recYktK2jGF5YuAL1)
+- francisco_1_story → Francisco I (recqtHpGxguWdzlRp)
+- francisco_2_story → Francisco II (recs4RkUun5T4bmt4)
+- fresno → Fresno (recmwHz9KwofaLpjL)
+- grapa → Grapa (rec2uf7c2GThHoomI)
+- hackberry → Hackberry (recLnPMGjMi1Wtg6A)
+- hickory → Hickory (recttDkh2D3ePKsOh)
+- indigo → Indigo (rec698U5KYhZWy6ap)
+- iris → Iris (reckw1CmsYLh60vnO)
+- jasmine → Jasmine (reckpMJ9CbXWxZHrC)
+- juniper → Juniper (recjBIhEtrf3o4yms)
+- lorenzo → San Lorenzo (recqpSIGRHdtvrqfa)
+- lorenzo_ii → San Lorenzo II (recpTHngaXqFkKIYi)
+- luna → Luna (recaICqnQSoFoCzEZ)
+- lunelli → Lunelli (recI4SS1wesyzshqW)
+- magnolia → Magnolia (rec1kIoSr3W6QDYVh)
+- manzanita → Manzanita (recUXVgAm4rrjBX18)
+- marigold → Marigold (recg98DSbDW5qsLG6)
+- monte → Monte (recgejPHlyXW6pJEy)
+- mulberry → Mulberry (recSzcOLP6RduyLf7)
+- nikola → Nikola (recBANjDwsdZr3E81)
+- oak → Oak (reclNZHleqns4zr72)
+- palmetto → Palmetto (reclyu0Wj4RJb1kmi)
+- paloma → Paloma (recvky45HoXGM9LIJ)
+- pecan → Pecan (recJ3EzrefEPK0gr4)
+- peppoli → Peppoli (recanN8zXHQwEjHAa)
+- presidio → Presidio (recZ29dIiwGvu1B5c)
+- sage → Sage (recX3TJ7OpppzQIh0)
+- san_luis → San Luis (rec2tCLpsQr12wr4P)
+- san_saba → San Saba (recCuhR0x2eO9Xbqh)
+- santa_cruz → Santa Cruz (reculREsNefdKhxw1)
+- valero → Valero (rechy9ENjchdy9Z1n)
+
+## Folders with no DB record (23) — discontinued / not in D1
+- acuna
+- antonio
+- augustin
+- coach_house
+- concepcion
+- concho
+- daisy
+- fiddlewood
+- francisco
+- guadalupe
+- hibiscus
+- himalayan
+- nopal
+- rosario
+- rushmore
+- san_jose
+- san_juan
+- san_marcos
+- santa_maria_ll
+- santiago
+- solano
+- velasco
+- vinsanto
+
+## Records with no folder (12) — no SVG art supplied
+- Bluebonnet (rec21iT87y1OWS9Cs)
+- Osprey (rec32xlNw2vec81z6)
+- Kestrel (rec7V9RjfumZdNQYT)
+- Nueces (recNwA5fgMiBoYZ4D)
+- Cimarron (recZIH7Gh61sYTTe1)
+- Blanco (recZsLzAeAnXF7Kks)
+- Palm (rechmvVglsjwFlPiV)
+- Cedar (recqBr621FCPuESXj)
+- Laurel (rect9Q98CEgOoQbGC)
+- Marzano (adme454674473aa20)
+- Brunello (admff58748711e796)
+- Birch (adm6d9e7cc731907c)
+
+## ⚠ Records WITH linked QMIs but NO image (8) — operator follow-up
+- Bluebonnet (rec21iT87y1OWS9Cs) — 16 linked QMI(s)
+- Osprey (rec32xlNw2vec81z6) — 10 linked QMI(s)
+- Kestrel (rec7V9RjfumZdNQYT) — 11 linked QMI(s)
+- Nueces (recNwA5fgMiBoYZ4D) — 3 linked QMI(s)
+- Cimarron (recZIH7Gh61sYTTe1) — 4 linked QMI(s)
+- Blanco (recZsLzAeAnXF7Kks) — 2 linked QMI(s)
+- Cedar (recqBr621FCPuESXj) — 4 linked QMI(s)
+- Laurel (rect9Q98CEgOoQbGC) — 3 linked QMI(s)

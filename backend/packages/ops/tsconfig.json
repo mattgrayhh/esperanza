@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["@cloudflare/workers-types", "node", "better-sqlite3"],
+    // Force a single zod identity across the whole ops compilation. `agents`
+    // pulls a nested zod v4 into packages/ops while the root has v3; the MCP
+    // SDK's zod-compat types accept either, but only if our schemas and the
+    // SDK resolve the SAME physical zod. Pin both to ops's (v4) copy so the
+    // SDK's `import 'zod/v4/core'` and our `import { z } from 'zod'` agree.
+    "paths": {
+      "zod": ["./node_modules/zod"],
+      "zod/*": ["./node_modules/zod/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts", "vitest.config.ts"]
+}

@@ -1,0 +1,18 @@
+# Root .dev.vars.example — copy to per-package .dev.vars (NEVER commit real values).
+# These are the secret NAMES consumed across the workers. Each worker only needs
+# the subset relevant to it (see README RUNBOOK "wrangler secret put" list).
+# For local dev, wrangler reads .dev.vars from the package directory you run in.
+
+# --- Snowflake (ingest) ---
+SNOWFLAKE_PASSWORD=
+
+# --- Microsoft Graph / OneDrive renderings (renderings) ---
+MS_GRAPH_TENANT_ID=
+MS_GRAPH_CLIENT_ID=
+MS_GRAPH_CLIENT_SECRET=
+
+# --- MailLayer (admin — emails generated passwords on user create/reset) ---
+# The enabled Esperanza MailLayer template's `txn_...` key. Best-effort: if unset, the
+# one-time password is still shown on screen for manual relay. MAILLAYER_API_URL is
+# optional (code defaults to https://mailer.hazardhouse.ai/api/transactional/send).
+MAILLAYER_API_KEY=

@@ -1,0 +1,21 @@
+-- =============================================================================
+-- esperanza-cf — D1 (SQLite) migration 0011: floor_plans.interior_photos_json.
+--
+-- Dedicated INTERIOR photos gallery for floor plans (client feedback 2026-06-10:
+-- "interior photos aren't currently visible in the floor plan image section").
+-- The existing photo_gallery / elevation_gallery / additional_images_gallery
+-- columns carry legacy Airtable exterior/elevation sets; this column is the
+-- admin-owned, ordered interior set, mirroring the {url, alt} JSON-array shape
+-- of communities.photo_gallery_json (0008) and qmi.photo_gallery_json (0010).
+-- (framer-push's galleryUrls() accepts both bare-string and {url,...} arrays.)
+--
+-- COLUMN BUDGET: floor_plans is at 54 columns; this takes it to 55. Headroom: 45.
+--
+-- Apply with:
+--   wrangler d1 migrations apply esperanza --local      (dev)
+--   wrangler d1 migrations apply esperanza --remote     (prod)
+--
+-- Admin-owned (DAM ImageGallery widget). Purely additive, nullable → existing
+-- rows, reads, writes, and tests untouched.
+-- =============================================================================
+ALTER TABLE floor_plans ADD COLUMN interior_photos_json TEXT; -- JSON array of {url, alt}

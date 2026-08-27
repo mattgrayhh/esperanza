@@ -1,0 +1,228 @@
+# packages/admin — Next.js 15 admin (OpenNext-on-Workers).
+# Covers all 9 entities. Every write edits D1, uploads images to R2, and logs audit_log.
+#
+# AUTH: This admin runs on its workers.dev URL (the esperanzahomes.com zone is NOT on
+# this Cloudflare account, so the old Cloudflare Access gate is gone). It authenticates
+# its < 20 marketing users itself via Auth.js v5 (Credentials provider + JWT session).
+# See lib/auth.ts. Users live in the D1 `admin_users` table (migration 0001).
+#
+# Build pipeline: `opennextjs-cloudflare build` runs `next build` then emits
+# .open-next/worker.js (the Worker entry, referenced by `main`) and .open-next/assets
+# (static output, served via the ASSETS binding). Deploy with `opennextjs-cloudflare
+# deploy` (NOT `wrangler deploy` directly — OpenNext wraps it).
+name = "esperanza-admin"
+main = ".open-next/worker.js"
+# OpenNext 1.x requires a recent compatibility_date + nodejs_compat. nodejs_compat also
+# backs the Web Crypto / Node APIs Auth.js and the Next.js standalone server use in workerd.
+# 2025-08-16+ is required by @sentry/nextjs on Workers (introduces https.request, used by
+# the Sentry SDK's server transport).
+compatibility_date = "2025-08-16"
+compatibility_flags = ["nodejs_compat"]
+
+# OpenNext static assets binding.
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+# Shared D1 binding. database_id placeholder — fill after `wrangler d1 create esperanza`.
+# Admin reads use withSession("first-primary") for read-your-writes (NOT a replica).
+[[d1_databases]]
+binding = "DB"
+database_name = "esperanza"
+database_id = "<D1_DATABASE_ID>"
+# Local `next dev` uses the EMULATED local D1 (stale unless synced via
+# `wrangler d1 export` → `wrangler d1 execute --local`, or migrations + seed-admin).
+# Combined with the ADMIN_DEV_EMAIL auth bypass, a remote binding here would let a
+# local dev server write PRODUCTION data — so prod parity is opt-in: to deliberately
+# work against prod data, TEMPORARILY set `remote = true` here AND
+# `remoteBindings: true` in next.config.ts, and revert both before committing.
+migrations_dir = "../db/migrations"
+
+# Shared R2 bucket — image uploads land here; only stable URLs are persisted to D1.
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "esperanza-cms"
+
+# Producer: enqueue affected PDF renders on every admin write + all renders on theme publish.
+# The esperanza-pdf worker consumes this queue at max_concurrency=1.
+[[queues.producers]]
+binding = "RENDER_Q"
+queue = "esperanza-pdf-render"
+
+# Service binding to the public read API. postWrite() purges edge cache via this
+# binding (preferred over the public API_PUBLIC_URL fetch).
+[[services]]
+binding = "API"
+service = "esperanza-api"
+
+# Service binding to the PDF renderer worker (same-origin preview proxy).
+# The admin's /api/pdf-preview/... route fetches via this binding instead of a
+# public URL so the preview never traverses the public internet.
+[[services]]
+binding = "PDF"
+service = "esperanza-pdf"
+
+# Service binding to the ingest worker. The triggerIngestSync action (dashboard
+# "Sync now" button) calls its POST /run route via this binding (Authorization:
+# Bearer INGEST_TRIGGER_TOKEN) to run the Snowflake→D1 reconciliation on demand.
+# The Worker still authenticates the Bearer token on /run, so INGEST_TRIGGER_TOKEN
+# must be set as an admin secret (it matches ingest's INGEST_TRIGGER_TOKEN).
+# If the binding is absent, the action falls back to INGEST_URL over the public
+# internet.
+[[services]]
+binding = "INGEST"
+service = "esperanza-ingest"
+
+# Service binding to esperanza-ops. The /status page reads GET /health/sync via
+# this binding — same-account workers.dev fetches are blocked by Cloudflare, so
+# the public-URL fallback in status-live.ts only works from outside (local dev).
+[[services]]
+binding = "OPS"
+service = "esperanza-ops"
+
+# Service binding to the rhodes-availability Worker (Rhodes Living — the RENTAL tenant,
+# a separate company under the Rhodes parent brand). The /rhodes screen's server actions
+# (lib/rhodes-actions.ts) call its /api/* routes via this binding (Authorization: Bearer
+# RHODES_ADMIN_KEY) to read units, manage manual overrides, and force a Snowflake→KV
+# resync. The Worker still authenticates the Bearer key on every route, so
+# RHODES_ADMIN_KEY must be set as an admin secret (it matches the rhodes-availability
+# Worker's ADMIN_KEY). If the binding is absent (e.g. a partial deploy), the actions fall
+# back to RHODES_API_URL over the public internet. Both Workers live on the same
+# Cloudflare account (hello@hazard.house), so the binding resolves.
+[[services]]
+binding = "RHODES"
+service = "rhodes-availability"
+
+# Non-secret vars.
+#   IMAGES_PUBLIC_BASE_URL — public base for the R2 bucket. uploadImage() builds the
+#                            STABLE url as `${IMAGES_PUBLIC_BASE_URL}/<entity>/<id>/<file>`.
+#                            MUST be the custom domain bound to the esperanza-cms
+#                            bucket (img.hazardhouse.ai) — NEVER the pub-*.r2.dev
+#                            managed URL, which Cloudflare rate-limits / documents as
+#                            dev-only (caused intermittent broken images for some users;
+#                            2026-07). NEVER a v5.airtableusercontent.com url.
+# DO NOT set ADMIN_DEV_EMAIL here — it lives in .dev.vars (local only) so the login gate
+# can never be bypassed in a deployed environment.
+[vars]
+IMAGES_PUBLIC_BASE_URL = "https://img.hazardhouse.ai"
+# PDF links resolve through the esperanza-pdf WORKER route, not the raw R2 bucket.
+PDF_PUBLIC_BASE_URL = "https://esperanza-pdf.round-base-ed8c.workers.dev"
+# Public fallback for ingest POST /run (dashboard "Sync now") when the INGEST service
+# binding is unavailable. The action prefers the binding; this URL + INGEST_TRIGGER_TOKEN
+# is the backstop.
+INGEST_URL = "https://esperanza-ingest.round-base-ed8c.workers.dev"
+# Public fallback for the rhodes-availability Worker (Rhodes Living) when the RHODES
+# service binding is unavailable. The rhodes-actions prefer the binding; this URL +
+# RHODES_ADMIN_KEY is the backstop.
+RHODES_API_URL = "https://rhodes-availability.round-base-ed8c.workers.dev"
+# Public api worker — saveSiteSettings purges /api/public/settings?purge=1 here after a
+# save so the public site calculators pick the new Mortgage Rate up immediately (the 5-minute
+# edge TTL is the backstop if the purge fails).
+API_PUBLIC_URL = "https://esperanza-api.round-base-ed8c.workers.dev"
+# Static frontend worker — postWrite() also purges this origin's /api/public/* proxy
+# cache (separate from esperanza-api's own edge cache).
+FRONTEND_PUBLIC_URL = "https://esperanzahomes.hazardhouse.ai"
+# Publish → rebuild: postWrite() triggers a frontend redeploy so baked HTML (copy,
+# galleries, list grids, community/floor-plan pages) reflects the edit — live islands
+# already update via the cache purge above. The frontend deploys via GitHub Actions
+# (deploy.yml, workflow_dispatch), so we dispatch that workflow on each ref below using
+# the GITHUB_DISPATCH_TOKEN secret. Both refs during the domain transition: `main`
+# (prod worker) + `staging` (the worker esperanzahomes.hazardhouse.ai currently serves).
+# Narrow to "main" once the public domain points at the prod worker. See
+# @esperanza/db/lib/site-rebuild.ts. (A plain FRONTEND_DEPLOY_HOOK_URL POST hook, e.g. a
+# Cloudflare Workers Build hook, is used instead if that var is set.)
+FRONTEND_REPO = "Hazard-House/esperanza-frontend"
+FRONTEND_DEPLOY_REFS = "main,staging"
+# MailLayer transactional-email endpoint. lib/maillayer.ts emails a generated password
+# to a user on create / reset. Defaulted in code; override here only if it ever changes.
+MAILLAYER_API_URL = "https://mailer.hazardhouse.ai/api/transactional/send"
+# Optional: absolute base URL used to build the sign-in link in the password email when
+# no request Host is available (the action normally derives it from headers()). e.g.
+# ADMIN_PUBLIC_URL = "https://esperanza-admin.<account>.workers.dev"
+
+# === REQUIRED SECRETS (set via `wrangler secret put`, NOT here) ===
+#   AUTH_SECRET — Auth.js v5 JWT signing secret. The deployed Worker WILL NOT
+#                 authenticate without it. Generate + set with:
+#                   openssl rand -base64 32
+#                   wrangler secret put AUTH_SECRET --config packages/admin/wrangler.toml
+#                 (locally, put AUTH_SECRET=... in packages/admin/.dev.vars instead).
+#
+#   PDF_PREVIEW_SECRET — shared HMAC secret for preview tokens. Must match the value
+#                        deployed to the esperanza-pdf worker's PDF_PREVIEW_SECRET secret.
+#                        Generate + set with:
+#                          openssl rand -base64 32
+#                          wrangler secret put PDF_PREVIEW_SECRET --config packages/admin/wrangler.toml
+#                        (locally, put PDF_PREVIEW_SECRET=... in packages/admin/.dev.vars).
+#
+#   INGEST_TRIGGER_TOKEN — Bearer token the triggerIngestSync action (dashboard
+#                   "Sync now") sends to ingest POST /run (over the INGEST service
+#                   binding, or the public INGEST_URL fallback). Must equal the ingest
+#                   worker's INGEST_TRIGGER_TOKEN secret. Set with:
+#                     wrangler secret put INGEST_TRIGGER_TOKEN --config packages/admin/wrangler.toml
+#                   (locally, put INGEST_TRIGGER_TOKEN=... in packages/admin/.dev.vars).
+#
+#   RHODES_ADMIN_KEY — Bearer token the /rhodes (Rhodes Living) server actions send to
+#                   the rhodes-availability Worker (over the RHODES service binding, or
+#                   the public RHODES_API_URL fallback). Must EQUAL that Worker's ADMIN_KEY
+#                   secret. Until it is set, the /rhodes screen renders but shows an auth
+#                   error. Set with:
+#                     wrangler secret put RHODES_ADMIN_KEY --config packages/admin/wrangler.toml
+#                   (locally, put RHODES_ADMIN_KEY=... in packages/admin/.dev.vars).
+#
+#   PURGE_KEY — sent as `X-Purge-Key` on the /api/public/<entity>?purge=1 calls
+#                   (lib/actions.ts purgePublicCache). Must EQUAL the esperanza-api
+#                   worker's PURGE_KEY secret — the api IGNORES unauthenticated purges,
+#                   so without it edits only show after the edge TTL. Already set on the
+#                   deployed esperanza-admin worker. Set with:
+#                     wrangler secret put PURGE_KEY --config packages/admin/wrangler.toml
+#                   (locally, put PURGE_KEY=... in packages/admin/.dev.vars).
+#
+#   GITHUB_DISPATCH_TOKEN — (publish → rebuild, ACTIVE PATH) a fine-grained GitHub PAT
+#                   with `Actions: Read and write` (+ Metadata: read) scoped to
+#                   Hazard-House/esperanza-frontend. postWrite() uses it to trigger that
+#                   repo's deploy.yml workflow_dispatch on FRONTEND_DEPLOY_REFS, so a
+#                   publish re-bakes the static site. Most public pages are static HTML
+#                   baked at build time; purging the api cache alone only updates live JS
+#                   islands (maps, settings, QMI card reconciliation) — WITHOUT this
+#                   token, copy/gallery/list/community/floor-plan edits do NOT appear
+#                   until someone redeploys manually. Create the PAT at
+#                   github.com/settings/personal-access-tokens → Fine-grained, then:
+#                     wrangler secret put GITHUB_DISPATCH_TOKEN --config packages/admin/wrangler.toml
+#                   (locally, put GITHUB_DISPATCH_TOKEN=... in packages/admin/.dev.vars).
+#
+#   FRONTEND_DEPLOY_HOOK_URL — (OPTIONAL alt to GITHUB_DISPATCH_TOKEN) a plain POST
+#                   deploy hook (e.g. a Cloudflare Workers Build hook). If set, it is used
+#                   instead of the GitHub dispatch. Set with:
+#                     wrangler secret put FRONTEND_DEPLOY_HOOK_URL --config packages/admin/wrangler.toml
+#
+#   MAILLAYER_API_KEY — the ENABLED Esperanza MailLayer template's `txn_…` key. Used by
+#                   lib/maillayer.ts to email a generated password to a user on create /
+#                   reset. Sending is best-effort: if this is unset the action still
+#                   succeeds and the one-time password is shown on screen for manual
+#                   relay. Set with:
+#                     wrangler secret put MAILLAYER_API_KEY --config packages/admin/wrangler.toml
+#                   (locally, put MAILLAYER_API_KEY=... in packages/admin/.dev.vars).
+
+# Workers Logs + Traces — full observability, source of truth for deploys.
+# Mirrors the dashboard's granular schema (logs{} + traces{}) so a `wrangler deploy`
+# reproduces the live state instead of resetting it. head_sampling_rate=1 => keep
+# 100%; persist => queryable in the dashboard; invocation_logs => per-request lines.
+# NOTE: top-level `enabled=true` (dashboard leaves it false + relies on the sub-flags).
+# We force it true belt-and-suspenders so logging can never be silently disabled on
+# deploy — this is the "always know what happened" guarantee.
+# ponytail: 100% sampling everywhere. If a hot worker's log volume/cost ever bites,
+# lower head_sampling_rate on THAT worker; admin/internal workers are low-traffic.
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true

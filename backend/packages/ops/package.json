@@ -1,0 +1,25 @@
+{
+  "name": "@esperanza/ops",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@esperanza/db": "*",
+    "agents": "latest",
+    "@modelcontextprotocol/sdk": "latest",
+    "drizzle-orm": "*",
+    "zod": "^3.25"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "*",
+    "better-sqlite3": "*",
+    "typescript": "*",
+    "vitest": "*",
+    "wrangler": "latest"
+  }
+}

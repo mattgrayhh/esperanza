@@ -1,0 +1,22 @@
+-- =============================================================================
+-- esperanza-cf — D1 (SQLite) migration 0009: communities.nter_now.
+--
+-- Adds an admin-owned "Enter Now" (NterNow self-tour) link column to communities,
+-- mirroring the existing qmi.nter_now field. Until now there was NO community-level
+-- home for the NterNow CTA: during the Airtable→D1 migration the tour link landed in
+-- communities.featured_video (the Vimeo field), crossing the two. This column gives
+-- the tour link a proper home so featured_video can hold only the Vimeo embed.
+--
+-- Admin-owned (no Snowflake/Airtable sync writes it) — populated via the admin form
+-- and a one-time backfill of the 4 communities whose featured_video held the generic
+-- NterNow portal (Anaqua, El Eden, Tanglewood, Villas at Tres Lagos).
+--
+-- Purely additive, nullable → existing rows, reads, writes, and tests untouched.
+-- Apply with:
+--   wrangler d1 migrations apply esperanza --local      (dev)
+--   wrangler d1 migrations apply esperanza --remote      (prod)
+-- After the remote apply, RE-SEED field_definitions (scripts/seed-field-definitions.ts
+-- --remote) so the new field carries framer_type='string', custom=0; then POST /schema
+-- (framer-push) to create the "nter_now" string field on the Communities collection.
+-- =============================================================================
+ALTER TABLE communities ADD COLUMN nter_now TEXT;

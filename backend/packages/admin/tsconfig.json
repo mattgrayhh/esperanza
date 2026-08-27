@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "jsx": "preserve",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["@cloudflare/workers-types", "node", "react", "react-dom"],
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "incremental": true,
+    // Next emits .next/types/*.d.ts for typed routes; allow them but they aren't
+    // required for `tsc --noEmit` to pass (they only exist after a build).
+    "allowJs": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "cloudflare-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules", ".next", ".open-next"]
+}

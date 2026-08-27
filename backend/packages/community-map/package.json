@@ -1,0 +1,14 @@
+{
+  "name": "@esperanza/community-map",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Framework-neutral Leaflet/CARTO community map + popup card. Shared by the public site's Communities component and the admin community detail page.",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": { ".": "./index.ts" },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  }
+}

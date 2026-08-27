@@ -1,0 +1,34 @@
+{
+  "name": "esperanza-backend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare CMS stack for Esperanza Homes (D1 + R2 + Workers/Queues/Cron + Next.js admin). Source of truth for the public site.",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit -p packages/db/tsconfig.json && tsc --noEmit -p packages/db/scripts/tsconfig.json && tsc --noEmit -p packages/ingest/tsconfig.json && tsc --noEmit -p packages/api/tsconfig.json && tsc --noEmit -p packages/admin/tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply esperanza --local --config packages/db/wrangler.toml",
+    "db:migrate:remote": "wrangler d1 migrations apply esperanza --remote --config packages/db/wrangler.toml",
+    "check:migrations": "node scripts/check-migrations.mjs"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250520.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^20.19.41",
+    "better-sqlite3": "^12.10.0",
+    "drizzle-kit": "^0.31.1",
+    "drizzle-orm": "^0.44.2",
+    "node-html-parser": "^6.1.13",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4",
+    "wrangler": "latest"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
